@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10-Week Gym Program</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #111827;
+    color: #f3f4f6;
+    margin: 0;
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.25rem; margin-bottom: 2px; }
+  .subtitle { font-size: 0.82rem; color: #9ca3af; margin-bottom: 14px; line-height: 1.4; }
+
+  .week-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .week-btn {
+    position: relative;
+    padding: 10px 0;
+    text-align: center;
+    background: #1f2937;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 2px solid transparent;
+  }
+  .week-btn.selected { border-color: #3b82f6; }
+  .week-btn.complete { background: #14532d; }
+  .week-btn.missed::after {
+    content: "";
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #f59e0b;
+  }
+  .week-btn .check {
+    display: block;
+    font-size: 0.7rem;
+    color: #4ade80;
+  }
+
+  .phase-banner {
+    background: #1f2937;
+    border-left: 4px solid #7c3aed;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: #d1d5db;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+
+  .complete-btn {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 14px;
+    background: #374151;
+    border: 2px solid #4b5563;
+    border-radius: 8px;
+    color: #f3f4f6;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .complete-btn.on {
+    background: #14532d;
+    border-color: #22c55e;
+    color: #bbf7d0;
+  }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  .tab {
+    flex: 1;
+    padding: 9px 0;
+    text-align: center;
+    background: #1f2937;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.8rem;
+    border: 2px solid transparent;
+  }
+  .tab.active { background: #2563eb; border-color: #3b82f6; }
+
+  .progress { font-size: 0.85rem; color: #9ca3af; margin-bottom: 10px; }
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin: 14px 0 8px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .exercise {
+    background: #1f2937;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .exercise.done { opacity: 0.5; }
+  .exercise.done .ex-title { text-decoration: line-through; }
+  .ex-header { display: flex; gap: 12px; align-items: flex-start; }
+  input[type="checkbox"] {
+    width: 22px; height: 22px; margin-top: 2px; flex-shrink: 0;
+    accent-color: #22c55e;
+  }
+  .ex-title { font-weight: 600; font-size: 0.98rem; margin-bottom: 4px; }
+  .ex-sets { color: #93c5fd; font-weight: 600; }
+  .ex-desc { font-size: 0.83rem; color: #9ca3af; line-height: 1.4; margin-bottom: 8px; }
+  .ex-hint { font-size: 0.8rem; color: #fbbf24; margin-bottom: 8px; }
+  .weight-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 6px; padding-top: 8px; border-top: 1px solid #374151;
+  }
+  .weight-row label { font-size: 0.8rem; color: #9ca3af; white-space: nowrap; }
+  .weight-row input[type="text"] {
+    width: 100%; background: #111827; border: 1px solid #374151;
+    border-radius: 6px; padding: 6px 8px; color: #f3f4f6; font-size: 0.85rem;
+  }
+  .timer-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid #374151;
+  }
+  .timer-display {
+    font-variant-numeric: tabular-nums;
+    font-size: 1rem; font-weight: 700; color: #f3f4f6;
+    min-width: 46px;
+  }
+  .timer-display.zero { color: #4ade80; }
+  .timer-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px; border: none;
+    background: #374151; color: #f3f4f6;
+    font-size: 0.95rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .timer-btn.start-btn.running { background: #7c3aed; }
+  .reset-btn {
+    width: 100%; padding: 12px; margin-top: 4px;
+    background: #374151; border: none; border-radius: 8px;
+    color: #f3f4f6; font-size: 0.9rem; cursor: pointer;
+  }
+  .save-status {
+    text-align: center; font-size: 0.75rem; color: #6b7280; margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>10-Week Gym Program</h1>
+<div class="subtitle">Tap a week below to view it. Green = completed. Amber dot = a week you skipped.</div>
+
+<div class="week-strip" id="weekStrip"></div>
+
+<div class="phase-banner" id="phaseBanner"></div>
+
+<button class="complete-btn" id="completeBtn"></button>
+
+<div class="tabs" id="dayTabs">
+  <div class="tab active" data-day="A">Day A</div>
+  <div class="tab" data-day="B">Day B</div>
+  <div class="tab" data-day="C">Day C</div>
+</div>
+
+<div class="progress" id="progress"></div>
+<div id="exerciseList"></div>
+
+<button class="reset-btn" id="resetBtn">Reset checkmarks for this day</button>
+<div class="save-status" id="saveStatus">Progress saves automatically</div>
+
+<script>
+// ---------- DATA ----------
+const PHASE_NAMES = {
+  1: "Weeks 1–2 · Foundation",
+  2: "Weeks 3–4 · Build",
+  3: "Weeks 5–6 · Progress",
+  4: "Weeks 7–8 · Intensify",
+  5: "Weeks 9–10 · Peak"
+};
+const PHASE_BANNERS = {
+  1: "Pick a weight you could do about 14–15 reps of, but only do 10. Priority is clean form and getting your body reacquainted with the movements, not fatigue.",
+  2: "If Phase 1 felt solid, bump weight ~5–10% and/or add a 4th set. Still stop a couple reps shy of failure.",
+  3: "Move to 4 sets across the board. Bump weight another ~5–10% if last phase felt manageable.",
+  4: "Increase weight again and slow your lowering phase to 2–3 seconds for more control and muscle tension.",
+  5: "Final phase — use the heaviest weight you can control with good form for a clean 8 reps. After week 10 you're ready for a standard strength program or more training days."
+};
+
+function phaseOf(week) { return Math.ceil(week / 2); }
+
+const WARMUP = [
+  {t:"Arm circles — 30 sec", d:"Stand tall, extend arms out to your sides, make small circles that gradually get bigger. 15 sec forward, 15 sec backward. Loosens shoulders before pressing/pulling work."},
+  {t:"Leg swings — 10/side each direction", d:"Hold onto something for balance, swing one leg front-to-back like a pendulum, then side-to-side. Loosens hips and hamstrings before squats/lunges."},
+  {t:"Bodyweight squats — 10 reps", d:"Feet shoulder-width, squat down like sitting in a chair, stand back up. Wakes up the legs and gets blood flowing before loaded sets."},
+  {t:"Walking knee hugs — 10/leg", d:"Walk forward, pulling one knee up to your chest with both hands each step, alternating legs. Opens up hips and glutes."},
+  {t:"Cat-cow — 8 reps", d:"On hands and knees, alternate arching your back up toward the ceiling (cat) and dipping it down while lifting your head (cow). Mobilizes the spine before rows/deadlifts."},
+  {t:"Band pull-aparts or light row — 15 reps", d:"Pull hands apart in front of your chest with a light band (or a very light cable row), squeezing shoulder blades. Primes the upper back before pulling exercises."},
+  {t:"5 min light cardio", d:"Bike, treadmill walk, or rower at an easy pace. Raises core body temp and heart rate — the single most useful thing before lifting, especially after time off."}
+];
+
+// Standard progression used by most machine/free-weight exercises
+const STD = [
+  {sets:"3 x 10", hint:"Light — should feel like you could do ~14–15 reps"},
+  {sets:"3 x 10 (add a 4th set if easy)", hint:"Bump weight ~5–10% from Phase 1"},
+  {sets:"4 x 10", hint:"Bump weight another ~5–10%"},
+  {sets:"4 x 8–10", hint:"Increase weight, slow 2–3 sec lowering phase"},
+  {sets:"4 x 8", hint:"Heaviest weight you can control with good form for 8 clean reps"}
+];
+
+function wEx(title, desc) {
+  return { title, desc, phases: STD, noWeight:false };
+}
+
+const DAY_A = [
+  wEx("Leg press or goblet squat", "Leg press: sit in the machine, feet shoulder-width on the platform, push through your heels to extend legs, don't lock knees at the top. Goblet squat: hold a dumbbell vertically at your chest, squat keeping chest up and knees tracking over toes, stand back up."),
+  wEx("Chest press machine or bench press", "Machine: sit with back flat against the pad, push handles forward until arms extend, control the return. Bench press: lower the bar/dumbbells to chest level, press straight up until arms extend."),
+  wEx("Lat pulldown", "Sit at the machine, grab the bar wide, pull it down to your upper chest while squeezing shoulder blades together, let it rise back up slowly."),
+  wEx("Seated cable row", "Sit with feet on the platform, pull the handle toward your stomach keeping your back straight, squeeze shoulder blades, then extend arms back out."),
+  { title:"Plank", desc:"Forearms and toes on the ground, straight line from head to heels, brace your core like you're about to be punched in the stomach.", noWeight:true,
+    phases:[{sets:"3 x 20–30 sec"},{sets:"3 x 30–45 sec"},{sets:"3 x 45–60 sec"},{sets:"4 x 45–60 sec"},{sets:"4 x 60 sec"}] }
+];
+
+const DAY_B = [
+  wEx("Romanian deadlift", "Hold dumbbells or a bar in front of your thighs, hinge at the hips with a slight knee bend, lower until you feel a hamstring stretch, then drive hips forward to stand."),
+  wEx("Shoulder press machine", "Sit with back supported, push handles straight overhead until arms extend, lower back to shoulder height."),
+  wEx("Leg curl", "Lying or seated in the machine, curl your heels toward your glutes against resistance, then lower slowly."),
+  { title:"Assisted pull-up or wide-grip lat pulldown", desc:"Assisted pull-up: machine adds a counterweight; grip bar wide, pull chin over the bar, lower with control. Wide-grip pulldown: same as lat pulldown but with a wider hand placement.", noWeight:false,
+    phases:[
+      {sets:"3 x 10", hint:"Assisted: more assist weight is fine. Pulldown: light"},
+      {sets:"3 x 10", hint:"Assisted: reduce assist slightly. Pulldown: bump ~5–10%"},
+      {sets:"4 x 10", hint:"Assisted: reduce assist further. Pulldown: bump another ~5–10%"},
+      {sets:"4 x 8–10", hint:"Assisted: minimal assist. Pulldown: increase weight"},
+      {sets:"4 x 8", hint:"Assisted: as little assist as possible. Pulldown: heaviest controlled weight"}
+    ]},
+  { title:"Bicycle crunches", desc:"Lying on your back, hands behind head, bring opposite elbow to opposite knee in a pedaling motion, alternating sides.", noWeight:true,
+    phases:[{sets:"3 x 15/side"},{sets:"3 x 20/side"},{sets:"4 x 20/side"},{sets:"4 x 20/side, slower tempo"},{sets:"4 x 25/side"}] }
+];
+
+const DAY_C = [
+  { title:"Walking lunges", desc:"Step forward into a lunge (back knee toward the ground, front knee over ankle), push off to bring the back leg forward into the next lunge.", noWeight:false,
+    phases:[
+      {sets:"3 x 10/leg", hint:"Bodyweight only"},
+      {sets:"3 x 10/leg", hint:"Add light dumbbells if ready"},
+      {sets:"4 x 10/leg", hint:"Bump dumbbell weight ~5–10%"},
+      {sets:"4 x 10/leg", hint:"Increase weight, controlled tempo"},
+      {sets:"4 x 10/leg", hint:"Heaviest dumbbells you can control for 10 clean reps/leg"}
+    ]},
+  wEx("Incline chest press", "Same as chest press but on an inclined bench/machine, targets upper chest — press up and slightly back, lower with control."),
+  wEx("Seated row", "Same movement as the cable row on Day A."),
+  wEx("Leg extension", "Sit in the machine, extend legs to straighten knees against the pad, lower back down slowly."),
+  { title:"Dead bug", desc:"Lying on your back, arms up and knees bent at 90°, slowly extend opposite arm and leg toward the floor while keeping your lower back pressed down, return and switch sides.", noWeight:true,
+    phases:[{sets:"3 x 10/side"},{sets:"3 x 12/side"},{sets:"4 x 12/side"},{sets:"4 x 12/side, slower tempo"},{sets:"4 x 15/side"}] }
+];
+
+const DAY_DATA = {
+  A: WARMUP.map(w => ({title:w.t, desc:w.d, isWarmup:true, noWeight:true})).concat(DAY_A),
+  B: WARMUP.map(w => ({title:w.t, desc:w.d, isWarmup:true, noWeight:true})).concat(DAY_B),
+  C: WARMUP.map(w => ({title:w.t, desc:w.d, isWarmup:true, noWeight:true})).concat(DAY_C)
+};
+const WARMUP_COUNT = WARMUP.length;
+
+// ---------- TIMER HELPERS ----------
+function parseSeconds(text) {
+  if (!text) return null;
+  const minMatch = text.match(/(\d+)\s*min/);
+  if (minMatch) return parseInt(minMatch[1], 10) * 60;
+  const secMatches = [...text.matchAll(/(\d+)(?:\s*[–-]\s*(\d+))?\s*sec/g)];
+  if (secMatches.length) {
+    const nums = [];
+    secMatches.forEach(m => { nums.push(parseInt(m[1], 10)); if (m[2]) nums.push(parseInt(m[2], 10)); });
+    return Math.max(...nums);
+  }
+  return null;
+}
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+let activeIntervals = [];
+function clearAllTimers() {
+  activeIntervals.forEach(id => clearInterval(id));
+  activeIntervals = [];
+}
+
+// ---------- STATE ----------
+let state = { completedWeeks: {}, checks: {}, weights: {} };
+let currentWeek = 1;
+let currentDay = "A";
+const STORAGE_KEY = "gym-10wk-state";
+
+async function loadState() {
+  try {
+    if (window.storage) {
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if (res && res.value) {
+        state = JSON.parse(res.value);
+      }
+    } else {
+      throw new Error('no window.storage');
+    }
+  } catch (e) {
+    // Standalone file outside Claude — fall back to this browser's local storage
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) state = JSON.parse(raw);
+    } catch (e2) { /* first run, nothing saved yet */ }
+  }
+  state.completedWeeks = state.completedWeeks || {};
+  state.checks = state.checks || {};
+  state.weights = state.weights || {};
+  render();
+}
+
+async function saveState() {
+  const statusEl = document.getElementById('saveStatus');
+  try {
+    if (window.storage) {
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+    statusEl.textContent = "Progress saved";
+  } catch (e) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      statusEl.textContent = "Progress saved";
+    } catch (e2) {
+      statusEl.textContent = "Couldn't save — check connection";
+    }
+  }
+  setTimeout(() => { statusEl.textContent = "Progress saves automatically"; }, 1500);
+}
+
+// ---------- RENDER ----------
+function renderWeekStrip() {
+  const strip = document.getElementById('weekStrip');
+  strip.innerHTML = "";
+  const highestComplete = Math.max(0, ...Object.keys(state.completedWeeks).filter(w => state.completedWeeks[w]).map(Number));
+  for (let w = 1; w <= 10; w++) {
+    const btn = document.createElement('div');
+    const isComplete = !!state.completedWeeks[w];
+    const isMissed = !isComplete && w < highestComplete;
+    btn.className = 'week-btn' + (w === currentWeek ? ' selected' : '') + (isComplete ? ' complete' : '') + (isMissed ? ' missed' : '');
+    btn.innerHTML = 'Wk ' + w + (isComplete ? '<span class="check">✓ done</span>' : '');
+    btn.addEventListener('click', () => { currentWeek = w; render(); });
+    strip.appendChild(btn);
+  }
+}
+
+function renderBanner() {
+  const phase = phaseOf(currentWeek);
+  document.getElementById('phaseBanner').textContent = PHASE_NAMES[phase] + " — " + PHASE_BANNERS[phase];
+}
+
+function renderCompleteBtn() {
+  const btn = document.getElementById('completeBtn');
+  const isComplete = !!state.completedWeeks[currentWeek];
+  btn.textContent = isComplete ? ("✓ Week " + currentWeek + " marked complete") : ("Mark Week " + currentWeek + " complete");
+  btn.className = 'complete-btn' + (isComplete ? ' on' : '');
+}
+
+function renderTabs() {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.day === currentDay);
+  });
+}
+
+function renderExercises() {
+  clearAllTimers();
+  const list = document.getElementById('exerciseList');
+  list.innerHTML = "";
+  const phase = phaseOf(currentWeek);
+  const items = DAY_DATA[currentDay];
+  let doneCount = 0;
+
+  items.forEach((item, idx) => {
+    const key = currentWeek + '-' + currentDay + '-' + idx;
+    const checked = !!state.checks[key];
+    if (checked) doneCount++;
+
+    if (idx === 0) {
+      const h = document.createElement('div');
+      h.className = 'section-label';
+      h.textContent = 'Warm-up first';
+      list.appendChild(h);
+    }
+    if (idx === WARMUP_COUNT) {
+      const h = document.createElement('div');
+      h.className = 'section-label';
+      h.textContent = 'Workout';
+      list.appendChild(h);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'exercise' + (checked ? ' done' : '');
+
+    const setsInfo = item.isWarmup ? null : item.phases[phase - 1];
+
+    // figure out if this item needs a timer, and for how many seconds
+    const timerSource = item.isWarmup ? item.title : (setsInfo ? setsInfo.sets : null);
+    const timerSeconds = parseSeconds(timerSource);
+
+    let html = '<div class="ex-header"><input type="checkbox" ' + (checked ? 'checked' : '') + '>';
+    html += '<div style="width:100%">';
+    html += '<div class="ex-title">' + item.title;
+    if (setsInfo) html += ' — <span class="ex-sets">' + setsInfo.sets + '</span>';
+    html += '</div>';
+    html += '<div class="ex-desc">' + item.desc + '</div>';
+    if (setsInfo && setsInfo.hint) html += '<div class="ex-hint">' + setsInfo.hint + '</div>';
+    if (!item.isWarmup && !item.noWeight) {
+      const wKey = key;
+      const wVal = state.weights[wKey] || "";
+      html += '<div class="weight-row"><label>Weight used:</label><input type="text" data-wkey="' + wKey + '" value="' + wVal.replace(/"/g,'&quot;') + '" placeholder="log what you used"></div>';
+    }
+    if (timerSeconds) {
+      html += '<div class="timer-row">';
+      html += '<button class="timer-btn start-btn" title="Start/Pause">▶</button>';
+      html += '<span class="timer-display">' + formatTime(timerSeconds) + '</span>';
+      html += '<button class="timer-btn reset-timer-btn" title="Reset">↺</button>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+    card.innerHTML = html;
+
+    card.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
+      state.checks[key] = e.target.checked;
+      card.classList.toggle('done', e.target.checked);
+      updateProgress();
+      saveState();
+    });
+
+    const wInput = card.querySelector('input[type="text"]');
+    if (wInput) {
+      wInput.addEventListener('change', (e) => {
+        state.weights[e.target.dataset.wkey] = e.target.value;
+        saveState();
+      });
+    }
+
+    if (timerSeconds) {
+      let remaining = timerSeconds;
+      let intervalId = null;
+      const startBtn = card.querySelector('.start-btn');
+      const resetBtn = card.querySelector('.reset-timer-btn');
+      const display = card.querySelector('.timer-display');
+
+      function tick() {
+        remaining--;
+        display.textContent = formatTime(Math.max(remaining, 0));
+        if (remaining <= 0) {
+          clearInterval(intervalId);
+          activeIntervals = activeIntervals.filter(id => id !== intervalId);
+          intervalId = null;
+          startBtn.textContent = '▶';
+          startBtn.classList.remove('running');
+          display.classList.add('zero');
+        }
+      }
+
+      startBtn.addEventListener('click', () => {
+        if (intervalId) {
+          // currently running -> pause
+          clearInterval(intervalId);
+          activeIntervals = activeIntervals.filter(id => id !== intervalId);
+          intervalId = null;
+          startBtn.textContent = '▶';
+          startBtn.classList.remove('running');
+        } else {
+          if (remaining <= 0) return;
+          display.classList.remove('zero');
+          intervalId = setInterval(tick, 1000);
+          activeIntervals.push(intervalId);
+          startBtn.textContent = '⏸';
+          startBtn.classList.add('running');
+        }
+      });
+
+      resetBtn.addEventListener('click', () => {
+        if (intervalId) {
+          clearInterval(intervalId);
+          activeIntervals = activeIntervals.filter(id => id !== intervalId);
+          intervalId = null;
+        }
+        remaining = timerSeconds;
+        display.textContent = formatTime(remaining);
+        display.classList.remove('zero');
+        startBtn.textContent = '▶';
+        startBtn.classList.remove('running');
+      });
+    }
+
+    list.appendChild(card);
+  });
+
+  updateProgressWith(doneCount, items.length);
+}
+
+function updateProgress() {
+  const items = DAY_DATA[currentDay];
+  let doneCount = 0;
+  items.forEach((item, idx) => {
+    const key = currentWeek + '-' + currentDay + '-' + idx;
+    if (state.checks[key]) doneCount++;
+  });
+  updateProgressWith(doneCount, items.length);
+}
+
+function updateProgressWith(done, total) {
+  document.getElementById('progress').textContent = done + ' / ' + total + ' exercises done';
+}
+
+function render() {
+  renderWeekStrip();
+  renderBanner();
+  renderCompleteBtn();
+  renderTabs();
+  renderExercises();
+}
+
+// ---------- EVENTS ----------
+document.getElementById('completeBtn').addEventListener('click', () => {
+  state.completedWeeks[currentWeek] = !state.completedWeeks[currentWeek];
+  saveState();
+  render();
+});
+
+document.getElementById('dayTabs').addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  currentDay = tab.dataset.day;
+  renderTabs();
+  renderExercises();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  const items = DAY_DATA[currentDay];
+  items.forEach((item, idx) => {
+    const key = currentWeek + '-' + currentDay + '-' + idx;
+    delete state.checks[key];
+  });
+  saveState();
+  renderExercises();
+});
+
+loadState();
+</script>
+
+</body>
+</html>
